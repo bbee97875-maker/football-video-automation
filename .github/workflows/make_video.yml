@@ -1,1 +1,39 @@
+name: Generate Football Video
+
+on:
+  repository_dispatch:
+    types: [create_video]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          pip install edge-tts
+          sudo apt-get update && sudo apt-get install -y ffmpeg
+
+      - name: Generate Audio (Microsoft TTS)
+        run: |
+          edge-tts --voice my-MM-ThihaNeural --text "${{ github.event.client_payload.script }}" --write-media voice.mp3
+
+      - name: Merge Video and Audio (FFmpeg)
+        run: |
+          ffmpeg -y -i bg.mp4 -i voice.mp3 -c:v copy -c:a aac -map 0:v:0 -map 1:a:0 -shortest output.mp4
+
+      - name: Send Video to Telegram
+        run: |
+          curl -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendVideo" \
+            -F chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+            -F video="@output.mp4" \
+            -F caption="${{ github.event.client_payload.title }}"
 
