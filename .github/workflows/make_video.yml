@@ -25,10 +25,28 @@ jobs:
       - name: Generate Audio (Microsoft TTS)
         run: |
           edge-tts --voice my-MM-ThihaNeural --text "${{ github.event.client_payload.script }}" --write-media voice.mp3
+ 
+      - name: Download News Image
+        run: |
+          # n8n က ဓာတ်ပုံလင့်ခ် ပို့ပေးရင် ဒေါင်းမယ်၊ မပါလာရင် နဂို bg.mp4 ကိုပဲ သုံးဖို့ fallback လုပ်ထားခြင်း
+          IMAGE_URL="${{ github.event.client_payload.image_url }}"
+          if [ -n "$IMAGE_URL" ]; then
+            curl -o news_pic.jpg "$IMAGE_URL"
+            echo "IMAGE_EXISTS=true" >> $GITHUB_ENV
+          else
+            echo "IMAGE_EXISTS=false" >> $GITHUB_ENV
+          fi
 
       - name: Merge Video and Audio (FFmpeg)
         run: |
-          ffmpeg -y -i bg.mp4 -i voice.mp3 -c:v copy -c:a aac -map 0:v:0 -map 1:a:0 -shortest output.mp4
+          if [ "${{ env.IMAGE_EXISTS }}" = "true" ]; then
+            # ဓာတ်ပုံကို အသံဖိုင်အရှည်အတိုင်း ဗီဒီယိုအဖြစ် ပြောင်းလဲပေါင်းစပ်ခြင်း
+            ffmpeg -y -loop 1 -i news_pic.jpg -i voice.mp3 -c:v libx264 -tune stillimage -c:a aac -b:a 192k -pix_fmt yuv420p -shortest output.mp4
+          else
+            # ဓာတ်ပုံမရှိရင် နဂိုအတိုင်း bg.mp4 ဗီဒီယိုအဟောင်းနဲ့ပဲ တွဲခြင်း
+            ffmpeg -y -i bg.mp4 -i voice.mp3 -c:v copy -c:a aac -map 0:v:0 -map 1:a:0 -shortest output.mp4
+          fi
+
 
       - name: Send Video to Telegram
         run: |
