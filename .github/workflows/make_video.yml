@@ -22,10 +22,16 @@ jobs:
           pip install edge-tts
           sudo apt-get update && sudo apt-get install -y ffmpeg
 
-      - name: Generate Audio (Microsoft TTS)
+            - name: Generate Audio (Microsoft TTS)
         run: |
-          edge-tts --voice my-MM-ThihaNeural --text "${{ github.event.client_payload.script }}" --write-media voice.mp3
- 
+          # ပို့လာတဲ့စာသားကို text.txt ဖိုင်ထဲ အရင်သိမ်းခြင်း
+          cat << 'EOF' > text.txt
+          ${{ github.event.client_payload.title }}
+          EOF
+          
+          # edge-tts ကို ဖိုင်ကနေတစ်ဆင့် အသံပြောင်းခိုင်းခြင်း
+          edge-tts --voice my-MM-ThihaNeural --file text.txt --write-media voice.mp3
+
       - name: Download News Image
         run: |
           # n8n က ဓာတ်ပုံလင့်ခ် ပို့ပေးရင် ဒေါင်းမယ်၊ မပါလာရင် နဂို bg.mp4 ကိုပဲ သုံးဖို့ fallback လုပ်ထားခြင်း
