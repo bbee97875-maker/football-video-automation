@@ -22,7 +22,7 @@ jobs:
           pip install edge-tts
           sudo apt-get update && sudo apt-get install -y ffmpeg
 
-            - name: Generate Audio (Microsoft TTS)
+      - name: Generate Audio (Microsoft TTS)
         run: |
           # ပို့လာတဲ့စာသားကို text.txt ဖိုင်ထဲ အရင်သိမ်းခြင်း
           cat << 'EOF' > text.txt
@@ -53,11 +53,9 @@ jobs:
             ffmpeg -y -i bg.mp4 -i voice.mp3 -c:v copy -c:a aac -map 0:v:0 -map 1:a:0 -shortest output.mp4
           fi
 
-
       - name: Send Video to Telegram
         run: |
           curl -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendVideo" \
             -F chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
             -F video="@output.mp4" \
             -F caption="${{ github.event.client_payload.title }}"
-
